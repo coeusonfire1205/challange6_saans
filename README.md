@@ -4,7 +4,7 @@ Hack2skill Prompt Wars, Challenge 06. A local web application that helps househo
 
 ## Run on Windows
 
-Requirements: Node.js 22 or newer. No npm dependencies or build step are needed.
+Requirements: Node.js 22 or newer. No production npm dependencies or build step are needed. Development checks require `npm ci`.
 
 1. Open this folder, ideally `D:\hack2skill\challenge 6`.
 2. Double-click `START.bat`, or run `npm start` in this folder.
@@ -119,3 +119,7 @@ The dashboard borrows the information hierarchy of AQI.in while keeping Saans’
 ## Deployment
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel and Render setup. Deploy the repository root with its Node backend, not only the public folder. Configure cloud AI secrets in the host dashboard.
+
+## Maintaining code quality
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for module responsibilities, request contracts, cache behaviour and contribution guidance. Run `npm ci` followed by `npm run check` before pushing. GitHub Actions repeats these checks on Node 22 and 24. Production still has no npm runtime dependencies.

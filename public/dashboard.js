@@ -1,64 +1,303 @@
-import {category} from '/engine.mjs';
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const n=(v,d=0)=>Number.isFinite(v)?v.toFixed(d):'—';
-const bands=[['Good',50,'#68d59c'],['Moderate',100,'#e5ce6a'],['Unhealthy for sensitive groups',150,'#efab67'],['Unhealthy',200,'#ec787f'],['Very unhealthy',300,'#bf8cde'],['Hazardous',500,'#c65f89']];
-const cities={india:[['New Delhi',28.6139,77.209],['Mumbai',19.076,72.8777],['Jaipur',26.9124,75.7873],['Bengaluru',12.9716,77.5946],['Kolkata',22.5726,88.3639],['Chennai',13.0827,80.2707]],world:[['London',51.5074,-.1278],['New York',40.7128,-74.006],['Tokyo',35.6762,139.6503],['Singapore',1.3521,103.8198],['Dubai',25.2048,55.2708],['Sydney',-33.8688,151.2093]]};
-let miniMap=null,controller=null,version=0;
-const comparisons=new Map();
-export function destroyDashboard(){version++;controller?.abort();controller=null;if(miniMap){miniMap.remove();miniMap=null;}}
-export function renderDashboard({data,location,demo,onPick,toast}){
- destroyDashboard();const generation=version,cur=data.current,c=data.plan.category;
- const localTime=t=>new Date(t*1000).toLocaleString('en-IN',{timeZone:data.timezone,day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
- const hours=data.hours.filter(h=>h.time>=Date.now()/1000);
- let metric='aqi',range=24,region='india';
- const pollutants=[['PM₂.₅','Fine particles','pm2_5'],['PM₁₀','Coarse particles','pm10'],['O₃','Ozone','ozone'],['NO₂','Nitrogen dioxide','nitrogen_dioxide'],['SO₂','Sulphur dioxide','sulphur_dioxide'],['CO','Carbon monoxide','carbon_monoxide']];
- const marker=Number.isFinite(cur.us_aqi)?Math.max(0,Math.min(100,cur.us_aqi/500*100)):null;
- let saved=[];try{saved=JSON.parse(localStorage.getItem('saans.savedCities')||'[]');if(!Array.isArray(saved))saved=[];saved=saved.filter(p=>p&&typeof p.name==='string'&&Number.isFinite(p.latitude)&&Number.isFinite(p.longitude)&&Math.abs(p.latitude)<=90&&Math.abs(p.longitude)<=180).slice(-8);}catch{}
- const isSaved=()=>saved.some(p=>Math.abs(p.latitude-location.latitude)<.001&&Math.abs(p.longitude-location.longitude)<.001);
- document.querySelector('#view').innerHTML=`<div class="aq-dashboard">
- <div class="dash-intro"><div><span class="dash-live"><i></i>${demo?'ILLUSTRATIVE DEMO':'MODELLED AIR QUALITY'}</span><span class="dash-date">${esc(localTime(cur.time))} · ${esc(data.timezone)}</span></div><button id="save-city" class="dash-text">${isSaved()?'★ Saved location':'☆ Save location'}</button></div>
+import { escapeHTML as esc } from '/ui.js';
+import { category } from '/engine.mjs';
+
+const n = (v, d = 0) => (Number.isFinite(v) ? v.toFixed(d) : '—');
+const bands = [
+  ['Good', 50, '#68d59c'],
+  ['Moderate', 100, '#e5ce6a'],
+  ['Unhealthy for sensitive groups', 150, '#efab67'],
+  ['Unhealthy', 200, '#ec787f'],
+  ['Very unhealthy', 300, '#bf8cde'],
+  ['Hazardous', 500, '#c65f89'],
+];
+const cities = {
+  india: [
+    ['New Delhi', 28.6139, 77.209],
+    ['Mumbai', 19.076, 72.8777],
+    ['Jaipur', 26.9124, 75.7873],
+    ['Bengaluru', 12.9716, 77.5946],
+    ['Kolkata', 22.5726, 88.3639],
+    ['Chennai', 13.0827, 80.2707],
+  ],
+  world: [
+    ['London', 51.5074, -0.1278],
+    ['New York', 40.7128, -74.006],
+    ['Tokyo', 35.6762, 139.6503],
+    ['Singapore', 1.3521, 103.8198],
+    ['Dubai', 25.2048, 55.2708],
+    ['Sydney', -33.8688, 151.2093],
+  ],
+};
+let miniMap = null,
+  controller = null,
+  version = 0;
+const comparisons = new Map();
+export function destroyDashboard() {
+  version++;
+  controller?.abort();
+  controller = null;
+  if (miniMap) {
+    miniMap.remove();
+    miniMap = null;
+  }
+}
+export function renderDashboard({ data, location, demo, onPick, toast }) {
+  destroyDashboard();
+  const generation = version,
+    cur = data.current,
+    c = data.plan.category;
+  const localTime = (t) =>
+    new Date(t * 1000).toLocaleString('en-IN', {
+      timeZone: data.timezone,
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  const hours = data.hours.filter((h) => h.time >= Date.now() / 1000);
+  let metric = 'aqi',
+    range = 24,
+    region = 'india';
+  const pollutants = [
+    ['PM₂.₅', 'Fine particles', 'pm2_5'],
+    ['PM₁₀', 'Coarse particles', 'pm10'],
+    ['O₃', 'Ozone', 'ozone'],
+    ['NO₂', 'Nitrogen dioxide', 'nitrogen_dioxide'],
+    ['SO₂', 'Sulphur dioxide', 'sulphur_dioxide'],
+    ['CO', 'Carbon monoxide', 'carbon_monoxide'],
+  ];
+  const marker = Number.isFinite(cur.us_aqi)
+    ? Math.max(0, Math.min(100, (cur.us_aqi / 500) * 100))
+    : null;
+  let saved = [];
+  try {
+    saved = JSON.parse(localStorage.getItem('saans.savedCities') || '[]');
+    if (!Array.isArray(saved)) saved = [];
+    saved = saved
+      .filter(
+        (p) =>
+          p &&
+          typeof p.name === 'string' &&
+          Number.isFinite(p.latitude) &&
+          Number.isFinite(p.longitude) &&
+          Math.abs(p.latitude) <= 90 &&
+          Math.abs(p.longitude) <= 180,
+      )
+      .slice(-8);
+  } catch {}
+  const isSaved = () =>
+    saved.some(
+      (p) =>
+        Math.abs(p.latitude - location.latitude) < 0.001 &&
+        Math.abs(p.longitude - location.longitude) < 0.001,
+    );
+  document.querySelector('#view').innerHTML = `<div class="aq-dashboard">
+ <div class="dash-intro"><div><span class="dash-live"><i></i>${demo ? 'ILLUSTRATIVE DEMO' : 'MODELLED AIR QUALITY'}</span><span class="dash-date">${esc(localTime(cur.time))} · ${esc(data.timezone)}</span></div><button id="save-city" class="dash-text">${isSaved() ? '★ Saved location' : '☆ Save location'}</button></div>
  <div id="saved-cities" class="saved-cities" aria-label="Saved locations"></div>
  <div class="dash-hero-grid"><section class="card dash-air" aria-labelledby="city-air-title"><div class="dash-city-head"><div><p class="eyebrow">YOUR LOCAL AIR REPORT</p><h2 id="city-air-title">${esc(location.name)}</h2><p class="dash-coordinates">${Number(location.latitude).toFixed(3)}° latitude · ${Number(location.longitude).toFixed(3)}° longitude</p></div><span class="dash-standard">US AQI</span></div>
- <div class="dash-reading"><div><span class="dash-aqi-number" style="color:${c.color}">${n(cur.us_aqi)}</span><span class="dash-aqi-unit">Air Quality Index</span></div><div class="dash-condition"><span class="dash-condition-badge" style="--aq-color:${c.color}">${esc(c.label)}</span><p>${c.level>=3?'Make room for a gentler day. Your personalised plan can help you reduce outdoor exposure.':c.level<0?'Current AQI is unavailable. Check local advisories before planning your day.':'A clearer picture of your air, so you can make more informed everyday choices.'}</p><a href="#routine">See what this means for your day ↗</a></div></div>
- <div class="dash-scale-wrap"><div class="dash-scale">${bands.map(([label,max,color],i)=>`<span style="background:${color};flex:${max-(bands[i-1]?.[1]||0)}" title="${label}"></span>`).join('')}${marker!==null?`<i style="left:${marker}%" aria-label="Current AQI ${n(cur.us_aqi)}"></i>`:''}</div><div class="dash-scale-ticks"><span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500+</span></div></div>
- <div class="dash-air-footer"><span>Open-Meteo / CAMS · ${demo?'sample data':'model estimate'}</span><button class="dash-text" id="dash-method">About this reading ↗</button></div></section>
+ <div class="dash-reading"><div><span class="dash-aqi-number" style="color:${c.color}">${n(cur.us_aqi)}</span><span class="dash-aqi-unit">Air Quality Index</span></div><div class="dash-condition"><span class="dash-condition-badge" style="--aq-color:${c.color}">${esc(c.label)}</span><p>${c.level >= 3 ? 'Make room for a gentler day. Your personalised plan can help you reduce outdoor exposure.' : c.level < 0 ? 'Current AQI is unavailable. Check local advisories before planning your day.' : 'A clearer picture of your air, so you can make more informed everyday choices.'}</p><a href="#routine">See what this means for your day ↗</a></div></div>
+ <div class="dash-scale-wrap"><div class="dash-scale">${bands.map(([label, max, color], i) => `<span style="background:${color};flex:${max - (bands[i - 1]?.[1] || 0)}" title="${label}"></span>`).join('')}${marker !== null ? `<i style="left:${marker}%" aria-label="Current AQI ${n(cur.us_aqi)}"></i>` : ''}</div><div class="dash-scale-ticks"><span>0</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500+</span></div></div>
+ <div class="dash-air-footer"><span>Open-Meteo / CAMS · ${demo ? 'sample data' : 'model estimate'}</span><button class="dash-text" id="dash-method">About this reading ↗</button></div></section>
  <section class="card dash-map-card"><div class="dash-panel-head"><div><p class="eyebrow">A WIDER PERSPECTIVE</p><h2>Explore the air around you</h2></div><span class="dash-map-icon">◎</span></div><div id="dashboard-map" aria-label="Interactive map of the selected location"></div><div class="dash-map-footer"><p>Zoom, move, or select a point.<br><span>One model reading at this location.</span></p><a class="button compact" href="#map">World map ↗</a></div></section></div>
- <section class="dash-pollutant-section"><div class="dash-section-title"><div><p class="eyebrow">THE AIR, BROKEN DOWN</p><h2>Major air pollutants</h2></div><span class="fine">Concentrations · µg/m³</span></div><div class="dash-pollutants">${pollutants.map(([symbol,label,key],i)=>`<article class="card dash-pollutant"><div class="dash-pollutant-top"><span class="molecule m-${i}">${symbol}</span><span class="fine">${String(i+1).padStart(2,'0')}</span></div><h3>${label}</h3><div class="dash-concentration">${n(cur[key],1)}<small>µg/m³</small></div><div class="dash-pollutant-rule"></div><span class="fine">${Number.isFinite(cur[key])?'Model estimate':'Reading unavailable'}</span></article>`).join('')}</div></section>
+ <section class="dash-pollutant-section"><div class="dash-section-title"><div><p class="eyebrow">THE AIR, BROKEN DOWN</p><h2>Major air pollutants</h2></div><span class="fine">Concentrations · µg/m³</span></div><div class="dash-pollutants">${pollutants.map(([symbol, label, key], i) => `<article class="card dash-pollutant"><div class="dash-pollutant-top"><span class="molecule m-${i}">${symbol}</span><span class="fine">${String(i + 1).padStart(2, '0')}</span></div><h3>${label}</h3><div class="dash-concentration">${n(cur[key], 1)}<small>µg/m³</small></div><div class="dash-pollutant-rule"></div><span class="fine">${Number.isFinite(cur[key]) ? 'Model estimate' : 'Reading unavailable'}</span></article>`).join('')}</div></section>
  <div class="dash-detail-grid"><section class="card dash-forecast"><div class="dash-panel-head"><div><p class="eyebrow">PLAN AHEAD</p><h2>Your air-quality forecast</h2></div><button id="forecast-download" class="dash-text" aria-label="Download displayed forecast as CSV">Download CSV ↓</button></div><div class="forecast-controls"><div class="segmented" aria-label="Forecast pollutant"><button data-metric="aqi" aria-pressed="true">US AQI</button><button data-metric="pm25" aria-pressed="false">PM₂.₅</button></div><div class="segmented" aria-label="Forecast duration"><button data-range="24" aria-pressed="true">24 hours</button><button data-range="48" aria-pressed="false">48 hours</button></div></div><div id="dashboard-forecast"></div><p class="fine">Forecasts can change. Lower pollution does not guarantee a safe time outdoors.</p></section>
  <section class="card dash-cities"><div class="dash-panel-head"><div><p class="eyebrow">AIR ACROSS CITIES</p><h2>A little perspective</h2></div><span class="pill">US AQI</span></div><div class="segmented compare-controls"><button data-region="india" aria-pressed="true">India</button><button data-region="world" aria-pressed="false">Around the world</button></div><div id="city-comparison" aria-live="polite"></div><p class="fine">Six selected cities, sorted by AQI. This is a comparison, not a comprehensive ranking.</p></section></div>
- <section class="dash-guidance"><div class="dash-section-title"><div><p class="eyebrow">FROM INSIGHT TO ACTION</p><h2>A better day starts here.</h2></div><a class="dash-text" href="#routine">Your complete daily plan ↗</a></div><div class="dash-action-grid">${data.plan.items.slice(0,3).map((item,i)=>`<a class="card dash-action" href="#${['routine','impact','indoor'][i]}"><span class="dash-action-symbol">${['◷','↗','⌂'][i]}</span><h3>${esc(item.title)}</h3><p>${esc(item.body)}</p><span class="dash-action-link">${['Build your routine','Explore your impact','Care for your indoor air'][i]} ↗</span></a>`).join('')}</div></section>
+ <section class="dash-guidance"><div class="dash-section-title"><div><p class="eyebrow">FROM INSIGHT TO ACTION</p><h2>A better day starts here.</h2></div><a class="dash-text" href="#routine">Your complete daily plan ↗</a></div><div class="dash-action-grid">${data.plan.items
+   .slice(0, 3)
+   .map(
+     (item, i) =>
+       `<a class="card dash-action" href="#${['routine', 'impact', 'indoor'][i]}"><span class="dash-action-symbol">${['◷', '↗', '⌂'][i]}</span><h3>${esc(item.title)}</h3><p>${esc(item.body)}</p><span class="dash-action-link">${['Build your routine', 'Explore your impact', 'Care for your indoor air'][i]} ↗</span></a>`,
+   )
+   .join('')}</div></section>
  <section class="dash-ai-banner"><div class="dash-ai-spark">✧</div><div><p class="eyebrow">YOUR EVERYDAY AIR COMPANION</p><h2>Numbers tell a story.<br>Saans helps you act on it.</h2><p>Bring your location, household, and questions together.</p></div><a class="button" href="#assistant">Ask Saans ↗</a></section>
- <section class="dash-legend"><div><h3>Understand your AQI</h3><p class="fine">US AQI scale · different from India’s National AQI</p></div><div class="dash-legend-items">${bands.map(([label,max,color],i)=>`<div><i style="background:${color}"></i><span>${label}<small>${i===5?'301+':`${i?bands[i-1][1]+1:0}–${max}`}</small></span></div>`).join('')}</div></section>
+ <section class="dash-legend"><div><h3>Understand your AQI</h3><p class="fine">US AQI scale · different from India’s National AQI</p></div><div class="dash-legend-items">${bands.map(([label, max, color], i) => `<div><i style="background:${color}"></i><span>${label}<small>${i === 5 ? '301+' : `${i ? bands[i - 1][1] + 1 : 0}–${max}`}</small></span></div>`).join('')}</div></section>
  </div>`;
- const q=s=>document.querySelector(s);
- q('#dash-method').onclick=()=>q('#sources-open').click();
- function renderSaved(){q('#saved-cities').innerHTML=saved.map((p,i)=>`<button data-saved="${i}">⌖ ${esc(p.name)} ↗</button>`).join('');q('#saved-cities').querySelectorAll('button').forEach(b=>b.onclick=()=>onPick(saved[Number(b.dataset.saved)]));}
- q('#save-city').onclick=()=>{if(isSaved())saved=saved.filter(p=>!(Math.abs(p.latitude-location.latitude)<.001&&Math.abs(p.longitude-location.longitude)<.001));else saved=[...saved,location].slice(-8);try{localStorage.setItem('saans.savedCities',JSON.stringify(saved));}catch{toast('Saved locations last only for this session.');}q('#save-city').textContent=isSaved()?'★ Saved location':'☆ Save location';renderSaved();};renderSaved();
- if(window.L){miniMap=L.map('dashboard-map',{scrollWheelZoom:false,worldCopyJump:true}).setView([location.latitude,location.longitude],8);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(miniMap);L.circleMarker([location.latitude,location.longitude],{radius:16,color:c.color,fillColor:c.color,fillOpacity:.65,weight:3}).addTo(miniMap).bindTooltip(`${esc(location.name)} · ${demo?'Demo · ':''}US AQI ${n(cur.us_aqi)}`,{permanent:true,direction:'top'});miniMap.on('click',e=>{const lat=e.latlng.lat,lng=((e.latlng.lng+180)%360+360)%360-180;if(lat < -90||lat >90)return;onPick({name:`Map location (${lat.toFixed(3)}, ${lng.toFixed(3)})`,latitude:lat,longitude:lng});});}
- function chosen(){return hours.slice(0,range);}
- function drawForecast(){
-  const hs=chosen(),valid=hs.filter(h=>Number.isFinite(h[metric]));
-  q('[data-metric="aqi"]').setAttribute('aria-pressed',metric==='aqi');q('[data-metric="pm25"]').setAttribute('aria-pressed',metric==='pm25');q('[data-range="24"]').setAttribute('aria-pressed',range===24);q('[data-range="48"]').setAttribute('aria-pressed',range===48);
-  if(!valid.length){q('#dashboard-forecast').innerHTML='<p class="muted">No forecast values available for this period.</p>';return;}
-  const max=Math.max(50,...valid.map(h=>h[metric]))*1.18,best=valid.reduce((a,b)=>a[metric]<b[metric]?a:b),unit=metric==='aqi'?'US AQI':'µg/m³',w=700,base=175,top=12,step=640/Math.max(hs.length,1);
-  const grid=[0,1,2,3].map(i=>{const v=max*i/3,y=base-(base-top)*i/3;return `<line x1="40" x2="690" y1="${y}" y2="${y}" stroke="#302d3b" stroke-dasharray="3 5"/><text x="0" y="${y+4}">${n(v)}</text>`;}).join('');
-  const bars=hs.map((h,i)=>Number.isFinite(h[metric])?`<rect x="${45+i*step}" y="${base-h[metric]/max*(base-top)}" width="${Math.max(3,step-5)}" height="${h[metric]/max*(base-top)}" rx="3" fill="${metric==='aqi'?category(h.aqi).color:'#b89cff'}"><title>${esc(localTime(h.time))}: ${n(h[metric],metric==='aqi'?0:1)} ${unit}</title></rect>`:'').join('');
-  const ticks=[0,Math.floor((hs.length-1)/2),hs.length-1].map((i,j)=>`<text x="${j===0?45:j===2?685:365}" y="204" text-anchor="${['start','middle','end'][j]}">${esc(localTime(hs[i].time))}</text>`).join('');
-  q('#dashboard-forecast').innerHTML=`<div class="forecast-highlight"><div><span class="fine">LOWEST IN THIS WINDOW</span><strong>${n(best[metric],metric==='aqi'?0:1)} <small>${unit}</small></strong></div><span>${esc(localTime(best.time))}<small>${hs.length} forecast hours available</small></span></div><svg class="dashboard-chart" viewBox="0 0 ${w} 214" role="img" aria-label="${hs.length} hour ${unit} forecast; exact readings in table below">${grid}${bars}${ticks}</svg><details class="forecast-table"><summary>View all ${hs.length} hourly readings</summary><div><table><thead><tr><th>Local date & time</th><th>US AQI</th><th>PM₂.₅ µg/m³</th></tr></thead><tbody>${hs.map(h=>`<tr><td>${esc(localTime(h.time))}</td><td>${n(h.aqi)}</td><td>${n(h.pm25,1)}</td></tr>`).join('')}</tbody></table></div></details>`;
- }
- q('.forecast-controls').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.metric)metric=b.dataset.metric;if(b.dataset.range)range=Number(b.dataset.range);drawForecast();};drawForecast();
- q('#forecast-download').onclick=()=>{const rows=['UTC time,US AQI,PM2.5 ug/m3,mode',...chosen().map(h=>`${new Date(h.time*1000).toISOString()},${Number.isFinite(h.aqi)?h.aqi:''},${Number.isFinite(h.pm25)?h.pm25:''},${demo?'demo':'modelled'}`)];const url=URL.createObjectURL(new Blob([rows.join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='Saans-air-forecast.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
- async function compare(){
-  controller?.abort();controller=new AbortController();const signal=controller.signal;
-  q('.compare-controls').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.region===region));
-  if(demo){q('#city-comparison').innerHTML='<div class="comparison-empty">◎<h3>Explore real city readings</h3><p>Switch off demo data to compare current model estimates across cities.</p></div>';return;}
-  q('#city-comparison').innerHTML='<p class="comparison-loading">Fetching city estimates…</p>';
-  const key=region,points=cities[key].map(([name,latitude,longitude])=>({name,latitude,longitude}));
-  try{let result=comparisons.get(key);if(!result||Date.now()-result.at>600000){const r=await fetch('/api/map',{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({points})});const d=await r.json();if(!r.ok)throw Error(d.error||'City data unavailable');result={at:Date.now(),points:d.points};comparisons.set(key,result);}
-   if(signal.aborted||generation!==version||region!==key)return;
-   const rows=[...result.points].sort((a,b)=>(b.current?.us_aqi??-1)-(a.current?.us_aqi??-1));
-   q('#city-comparison').innerHTML=rows.map((p,i)=>`<button class="city-compare-row" data-compare="${i}"><span class="city-order">${String(i+1).padStart(2,'0')}</span><span class="city-compare-name">${esc(p.location.name)}<small>${esc(category(p.current?.us_aqi).label)}</small></span><span class="city-score" style="color:${category(p.current?.us_aqi).color}">${n(p.current?.us_aqi)}</span><span class="city-arrow">↗</span></button>`).join('');q('#city-comparison').querySelectorAll('button').forEach(b=>b.onclick=()=>onPick(rows[Number(b.dataset.compare)].location));
-  }catch(e){if(signal.aborted||generation!==version)return;q('#city-comparison').innerHTML='<p class="muted">City estimates are unavailable right now.</p><button class="dash-text" id="compare-retry">Try again ↻</button>';q('#compare-retry').onclick=compare;}
- }
- q('.compare-controls').onclick=e=>{const b=e.target.closest('button');if(b?.dataset.region){region=b.dataset.region;compare();}};compare();
+  const q = (s) => document.querySelector(s);
+  q('#dash-method').onclick = () => q('#sources-open').click();
+  function renderSaved() {
+    q('#saved-cities').innerHTML = saved
+      .map((p, i) => `<button data-saved="${i}">⌖ ${esc(p.name)} ↗</button>`)
+      .join('');
+    q('#saved-cities')
+      .querySelectorAll('button')
+      .forEach((b) => (b.onclick = () => onPick(saved[Number(b.dataset.saved)])));
+  }
+  q('#save-city').onclick = () => {
+    if (isSaved())
+      saved = saved.filter(
+        (p) =>
+          !(
+            Math.abs(p.latitude - location.latitude) < 0.001 &&
+            Math.abs(p.longitude - location.longitude) < 0.001
+          ),
+      );
+    else saved = [...saved, location].slice(-8);
+    try {
+      localStorage.setItem('saans.savedCities', JSON.stringify(saved));
+    } catch {
+      toast('Saved locations last only for this session.');
+    }
+    q('#save-city').textContent = isSaved() ? '★ Saved location' : '☆ Save location';
+    renderSaved();
+  };
+  renderSaved();
+  if (window.L) {
+    miniMap = L.map('dashboard-map', { scrollWheelZoom: false, worldCopyJump: true }).setView(
+      [location.latitude, location.longitude],
+      8,
+    );
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(miniMap);
+    L.circleMarker([location.latitude, location.longitude], {
+      radius: 16,
+      color: c.color,
+      fillColor: c.color,
+      fillOpacity: 0.65,
+      weight: 3,
+    })
+      .addTo(miniMap)
+      .bindTooltip(`${esc(location.name)} · ${demo ? 'Demo · ' : ''}US AQI ${n(cur.us_aqi)}`, {
+        permanent: true,
+        direction: 'top',
+      });
+    miniMap.on('click', (e) => {
+      const lat = e.latlng.lat,
+        lng = ((((e.latlng.lng + 180) % 360) + 360) % 360) - 180;
+      if (lat < -90 || lat > 90) return;
+      onPick({
+        name: `Map location (${lat.toFixed(3)}, ${lng.toFixed(3)})`,
+        latitude: lat,
+        longitude: lng,
+      });
+    });
+  }
+  function chosen() {
+    return hours.slice(0, range);
+  }
+  function drawForecast() {
+    const hs = chosen(),
+      valid = hs.filter((h) => Number.isFinite(h[metric]));
+    q('[data-metric="aqi"]').setAttribute('aria-pressed', metric === 'aqi');
+    q('[data-metric="pm25"]').setAttribute('aria-pressed', metric === 'pm25');
+    q('[data-range="24"]').setAttribute('aria-pressed', range === 24);
+    q('[data-range="48"]').setAttribute('aria-pressed', range === 48);
+    if (!valid.length) {
+      q('#dashboard-forecast').innerHTML =
+        '<p class="muted">No forecast values available for this period.</p>';
+      return;
+    }
+    const max = Math.max(50, ...valid.map((h) => h[metric])) * 1.18,
+      best = valid.reduce((a, b) => (a[metric] < b[metric] ? a : b)),
+      unit = metric === 'aqi' ? 'US AQI' : 'µg/m³',
+      w = 700,
+      base = 175,
+      top = 12,
+      step = 640 / Math.max(hs.length, 1);
+    const grid = [0, 1, 2, 3]
+      .map((i) => {
+        const v = (max * i) / 3,
+          y = base - ((base - top) * i) / 3;
+        return `<line x1="40" x2="690" y1="${y}" y2="${y}" stroke="#302d3b" stroke-dasharray="3 5"/><text x="0" y="${y + 4}">${n(v)}</text>`;
+      })
+      .join('');
+    const bars = hs
+      .map((h, i) =>
+        Number.isFinite(h[metric])
+          ? `<rect x="${45 + i * step}" y="${base - (h[metric] / max) * (base - top)}" width="${Math.max(3, step - 5)}" height="${(h[metric] / max) * (base - top)}" rx="3" fill="${metric === 'aqi' ? category(h.aqi).color : '#b89cff'}"><title>${esc(localTime(h.time))}: ${n(h[metric], metric === 'aqi' ? 0 : 1)} ${unit}</title></rect>`
+          : '',
+      )
+      .join('');
+    const ticks = [0, Math.floor((hs.length - 1) / 2), hs.length - 1]
+      .map(
+        (i, j) =>
+          `<text x="${j === 0 ? 45 : j === 2 ? 685 : 365}" y="204" text-anchor="${['start', 'middle', 'end'][j]}">${esc(localTime(hs[i].time))}</text>`,
+      )
+      .join('');
+    q('#dashboard-forecast').innerHTML =
+      `<div class="forecast-highlight"><div><span class="fine">LOWEST IN THIS WINDOW</span><strong>${n(best[metric], metric === 'aqi' ? 0 : 1)} <small>${unit}</small></strong></div><span>${esc(localTime(best.time))}<small>${hs.length} forecast hours available</small></span></div><svg class="dashboard-chart" viewBox="0 0 ${w} 214" role="img" aria-label="${hs.length} hour ${unit} forecast; exact readings in table below">${grid}${bars}${ticks}</svg><details class="forecast-table"><summary>View all ${hs.length} hourly readings</summary><div><table><thead><tr><th>Local date & time</th><th>US AQI</th><th>PM₂.₅ µg/m³</th></tr></thead><tbody>${hs.map((h) => `<tr><td>${esc(localTime(h.time))}</td><td>${n(h.aqi)}</td><td>${n(h.pm25, 1)}</td></tr>`).join('')}</tbody></table></div></details>`;
+  }
+  q('.forecast-controls').onclick = (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.metric) metric = b.dataset.metric;
+    if (b.dataset.range) range = Number(b.dataset.range);
+    drawForecast();
+  };
+  drawForecast();
+  q('#forecast-download').onclick = () => {
+    const rows = [
+      'UTC time,US AQI,PM2.5 ug/m3,mode',
+      ...chosen().map(
+        (h) =>
+          `${new Date(h.time * 1000).toISOString()},${Number.isFinite(h.aqi) ? h.aqi : ''},${Number.isFinite(h.pm25) ? h.pm25 : ''},${demo ? 'demo' : 'modelled'}`,
+      ),
+    ];
+    const url = URL.createObjectURL(
+      new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8' }),
+    );
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Saans-air-forecast.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  async function compare() {
+    controller?.abort();
+    controller = new AbortController();
+    const signal = controller.signal;
+    q('.compare-controls')
+      .querySelectorAll('button')
+      .forEach((b) => b.setAttribute('aria-pressed', b.dataset.region === region));
+    if (demo) {
+      q('#city-comparison').innerHTML =
+        '<div class="comparison-empty">◎<h3>Explore real city readings</h3><p>Switch off demo data to compare current model estimates across cities.</p></div>';
+      return;
+    }
+    q('#city-comparison').innerHTML = '<p class="comparison-loading">Fetching city estimates…</p>';
+    const key = region,
+      points = cities[key].map(([name, latitude, longitude]) => ({ name, latitude, longitude }));
+    try {
+      let result = comparisons.get(key);
+      if (!result || Date.now() - result.at > 600000) {
+        const r = await fetch('/api/map', {
+          method: 'POST',
+          signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ points }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw Error(d.error || 'City data unavailable');
+        result = { at: Date.now(), points: d.points };
+        comparisons.set(key, result);
+      }
+      if (signal.aborted || generation !== version || region !== key) return;
+      const rows = [...result.points].sort(
+        (a, b) => (b.current?.us_aqi ?? -1) - (a.current?.us_aqi ?? -1),
+      );
+      q('#city-comparison').innerHTML = rows
+        .map(
+          (p, i) =>
+            `<button class="city-compare-row" data-compare="${i}"><span class="city-order">${String(i + 1).padStart(2, '0')}</span><span class="city-compare-name">${esc(p.location.name)}<small>${esc(category(p.current?.us_aqi).label)}</small></span><span class="city-score" style="color:${category(p.current?.us_aqi).color}">${n(p.current?.us_aqi)}</span><span class="city-arrow">↗</span></button>`,
+        )
+        .join('');
+      q('#city-comparison')
+        .querySelectorAll('button')
+        .forEach((b) => (b.onclick = () => onPick(rows[Number(b.dataset.compare)].location)));
+    } catch (e) {
+      if (signal.aborted || generation !== version) return;
+      q('#city-comparison').innerHTML =
+        '<p class="muted">City estimates are unavailable right now.</p><button class="dash-text" id="compare-retry">Try again ↻</button>';
+      q('#compare-retry').onclick = compare;
+    }
+  }
+  q('.compare-controls').onclick = (e) => {
+    const b = e.target.closest('button');
+    if (b?.dataset.region) {
+      region = b.dataset.region;
+      compare();
+    }
+  };
+  compare();
 }

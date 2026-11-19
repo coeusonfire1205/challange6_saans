@@ -2,7 +2,7 @@ services:
   - type: web
     name: challange6-saans
     runtime: node
-    buildCommand: npm run check
+    buildCommand: npm ci --include=dev && npm run check
     startCommand: npm start
     healthCheckPath: /healthz
     envVars:
