@@ -5,6 +5,7 @@ import {join,extname} from 'node:path';
 import {sources,makePlan,profileOf,fallbackAnswer,demoData} from './engine.mjs';
 const root=fileURLToPath(new URL('./public/',import.meta.url));
 const port=Number(process.env.PORT)||3060;
+import {hosted,bindHost,permittedRequest} from './hosting.mjs';
 const cache=new Map(),mapCache=new Map();
 import {normalizeLocation,normalizePoints,mapResults} from './geo.mjs';
 async function fetchJSON(url,options={},timeout=15000){
@@ -34,6 +35,7 @@ async function mapAir(points){
 }
 async function aiStatus(){
  if(process.env.AI_BASE_URL&&process.env.AI_API_KEY&&process.env.AI_MODEL)return {available:true,provider:'configured cloud',model:process.env.AI_MODEL,verified:false};
+ if(hosted&&!process.env.OLLAMA_URL)return {available:false,provider:'built-in guidance',model:null};
  try{
  const d=await fetchJSON((process.env.OLLAMA_URL||'http://127.0.0.1:11434')+'/api/tags',{},2000);
  const model=process.env.OLLAMA_MODEL||'qwen2.5:1.5b';
@@ -59,15 +61,16 @@ async function answer(body){
  }catch{return {text:fallbackAnswer(body.question,data,profile),mode:'rules',notice:'AI provider is unavailable. Showing built-in guidance.',sources};}
 }
 function send(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
-async function bodyOf(req){let bytes=0,chunks=[];for await(const chunk of req){bytes+=chunk.length;if(bytes>20000)throw new Error('Request too large');chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString()||'{}');}
-const server=http.createServer(async(req,res)=>{
+async function bodyOf(req){if(req.body!==undefined){const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body);if(Buffer.byteLength(raw)>20000)throw new Error('Request too large');return JSON.parse(raw);}let bytes=0,chunks=[];for await(const chunk of req){bytes+=chunk.length;if(bytes>20000)throw new Error('Request too large');chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString()||'{}');}
+export async function handler(req,res){
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
  res.setHeader('Content-Security-Policy',"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://tile.openstreetmap.org; script-src 'self'; connect-src 'self'; frame-ancestors 'none'");
  try{
- if(!['127.0.0.1','localhost'].includes((req.headers.host||'').split(':')[0]))return send(res,403,{error:'Local access only'});
+ const denied=permittedRequest(req,port);if(denied)return send(res,403,{error:denied});
  const u=new URL(req.url,'http://localhost');
- if(req.method==='POST'&&req.headers.origin&&!['http://127.0.0.1:'+port,'http://localhost:'+port].includes(req.headers.origin))return send(res,403,{error:'Origin not allowed'});
- if(req.method==='GET'&&u.pathname==='/api/health')return send(res,200,{ok:true,ai:await aiStatus()});
+
+ if((req.method==='GET'||req.method==='HEAD')&&u.pathname==='/healthz')return send(res,200,{ok:true});
+ if(req.method==='GET'&&u.pathname==='/api/health')return send(res,200,{ok:true,runtime:hosted?'hosted':'local',ai:await aiStatus()});
  if(req.method==='GET'&&u.pathname==='/api/search'){
  const name=u.searchParams.get('q')?.trim();if(!name||name.length<2||name.length>100)return send(res,400,{error:'Enter 2–100 characters'});
  const d=await fetchJSON('https://geocoding-api.open-meteo.com/v1/search?'+new URLSearchParams({name,count:'8',language:'en',format:'json'}));
@@ -85,6 +88,10 @@ const server=http.createServer(async(req,res)=>{
  const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.ttf':'font/ttf'};
  res.writeHead(200,{'Content-Type':mime[extname(file)]+(['.png','.ttf'].includes(extname(file))?'':'; charset=utf-8'),'Cache-Control':'no-cache'});res.end(content);
  }catch(e){send(res,400,{error:e.message==='fetch failed'?'Unable to reach data provider. Retry or explicitly select demo mode.':e.message});}
-});
-server.listen(port,'127.0.0.1',()=>console.log(`Saans is running at http://127.0.0.1:${port}\nPress Ctrl+C to stop.`));
-server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`Port ${port} is in use. Open the existing app or change PORT in .env.`:e.message);process.exitCode=1;});
+}
+// Importing the handler in a serverless function must never open a listening socket.
+if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
+ const server=http.createServer(handler);
+ server.listen(port,bindHost,()=>console.log(`Saans is running at http://${bindHost}:${port}\nPress Ctrl+C to stop.`));
+ server.on('error',e=>{console.error(e.code==='EADDRINUSE'?`Port ${port} is in use. Open the existing app or change PORT in .env.`:e.message);process.exitCode=1;});
+}

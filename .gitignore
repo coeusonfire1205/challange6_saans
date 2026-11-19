@@ -10,3 +10,5 @@ Thumbs.db
 models/
 playwright-report/
 test-results/
+
+.vercel/

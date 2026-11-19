@@ -12,7 +12,7 @@ Requirements: Node.js 22 or newer. No npm dependencies or build step are needed.
 4. Search a city or choose browser geolocation. Allow internet access for live forecast requests.
 5. Set up **Your household** to tailor the routine.
 
-The server binds to 127.0.0.1 only. Stop it with Ctrl+C. `npm run dev` enables server restart on edits. Change `PORT` in `.env` if needed; for a custom port open that URL manually rather than using the default-port launcher.
+Local startup binds to 127.0.0.1; production uses the hosting provider’s port and 0.0.0.0. Stop it with Ctrl+C. `npm run dev` enables server restart on edits. Change `PORT` in `.env` if needed; for a custom port open that URL manually rather than using the default-port launcher.
 
 ## Enable generative AI
 
@@ -115,3 +115,7 @@ The default route is a new home page inspired by the user's supplied GPT X refer
 Stop the running app with Ctrl+C. Extract this package and copy its contents into `D:\hack2skill\challenge 6`, replacing matching source files. Keep your existing `.env`; the package contains only `.env.example`. Restart with `START.bat` and open http://127.0.0.1:3060/#overview. No deployment is performed.
 
 The dashboard borrows the information hierarchy of AQI.in while keeping Saans’s dark violet identity. It uses Open-Meteo/CAMS data, not the AQI.in API. City comparisons cover six selected cities, not a complete pollution ranking. SO2 and CO concentrations are shown in µg/m³.
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel and Render setup. Deploy the repository root with its Node backend, not only the public folder. Configure cloud AI secrets in the host dashboard.

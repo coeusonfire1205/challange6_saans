@@ -120,5 +120,5 @@ function geoError(){notice('Location access was unavailable. Allow location perm
 $('#locate').onclick=()=>{if(!navigator.geolocation)return geoError();$('#locate').disabled=true;navigator.geolocation.getCurrentPosition(p=>geoResult(p),geoError,{timeout:15000,maximumAge:60000});};
 $('#follow-location').onchange=e=>{if(!e.target.checked)return stopFollowing();if(!navigator.geolocation)return geoError();lastGeoUpdate=0;geoWatch=navigator.geolocation.watchPosition(p=>geoResult(p,true),geoError,{timeout:15000,maximumAge:60000,enableHighAccuracy:false});};
 window.addEventListener('hashchange',()=>{render();window.scrollTo({top:0,behavior:'instant'});});
-api('/api/health').then(d=>{health=d;if(route()==='assistant'&&!busy)render();}).catch(()=>{});
+api('/api/health').then(d=>{health=d;$('.local-pill').innerHTML='<i></i> '+(d.runtime==='hosted'?'Hosted app':'Runs locally');if(route()==='assistant'&&!busy)render();}).catch(()=>{});
 load();
