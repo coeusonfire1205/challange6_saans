@@ -1,18 +1,15 @@
 # Validation record — Saans v1.3
 
 ## Previous installed version (v1.2)
-
 Project folder: D:\hack2skill\challenge 6
 Local app: http://127.0.0.1:3060
 World map: http://127.0.0.1:3060/#map
 The server now runs from the D-drive project. An ignored .env file is prepared; existing .env contents are preserved during updates.
 
 ## Verified on Windows / Node.js v24.22.1
-
 All 11 automated tests pass: AQI boundaries, missing values, sensitive-household plans, high-pollution travel advice, ventilation safety, emission arithmetic, profile bounds, coordinate validation, bounded map batches, coordinate/result associations, date-line wrapping and server/AI integration with a mock provider.
 
 Headless Chrome browser checks passed:
-
 - Actual city search and location selection; New Delhi and London returned different live model forecasts.
 - Initial world map with 24 colour-coded city points and successfully loaded OpenStreetMap tiles.
 - Marker selection, exact-coordinate lookup for Sydney, zoom controls and a 20-point viewport refresh.
@@ -22,18 +19,16 @@ Headless Chrome browser checks passed:
 - Desktop and mobile screenshots visually reviewed.
 
 ## Remaining external setup
-
 Real AI generation requires the user's later API configuration or a local Ollama model. Live AQI, city search, maps, routines and checklists work independently of AI credentials.
 Fill AI_BASE_URL, AI_API_KEY and AI_MODEL in .env for a compatible provider, then restart the server.
 GitHub creation/clone/push, public visibility and branch verification are not yet performed. Deployment and submission remain deferred.
 
 ## Data limits
-
 Air readings are Open-Meteo/CAMS model forecasts, explicitly labelled US AQI. Map points are sampled model values rather than monitoring stations or a continuous pollution heatmap. Geographic zoom does not increase atmospheric model resolution.
 Travel emission factors remain illustrative prototype assumptions.
 
-## Reference-design verification (v1.2)
 
+## Reference-design verification (v1.2)
 The supplied PDF was inspected visually. The new home page and application theme use its black background, large geometric typography, violet/blue orbital artwork and dark glass-like panels. Desktop and mobile screenshots were reviewed.
 
 All 11 automated tests pass on the user's Windows computer after the redesign. Headless Chrome verified the default homepage, locally hosted font and images, live forecast preview, dashboard CTA, 24 loaded map points, all eight routes at desktop and mobile widths, and the household dialog. No JavaScript exceptions or page-level horizontal overflow were detected. The existing AI configuration file was preserved. Source is approximately 1.4 MB, excluding secrets and Git metadata.

@@ -1,6 +1,6 @@
 {
   "name": "saans-air-quality-assistant",
-  "version": "1.5.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "Challenge 06: Urban Air Quality Assistant",
@@ -11,12 +11,6 @@
     "start": "node --env-file-if-exists=.env server.mjs",
     "dev": "node --watch --env-file-if-exists=.env server.mjs",
     "test": "node --test",
-    "check": "npm run format:check && node scripts/check-syntax.mjs && npm test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test:coverage": "node --test --experimental-test-coverage"
-  },
-  "devDependencies": {
-    "prettier": "3.6.2"
+    "check": "node --check server.mjs && node --check hosting.mjs && node --check api/index.js && node --check public/app.js && node --check public/map.js && node --check public/home.js && node --check public/dashboard.js && node --test"
   }
 }

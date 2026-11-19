@@ -1,141 +1,15 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#050506" />
-    <title>Saans — A little more room to breathe</title>
-    <link rel="icon" href="/favicon.svg" />
-    <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="/style.css" />
-    <link rel="stylesheet" href="/theme.css" />
-    <link rel="stylesheet" href="/dashboard.css" />
-  </head>
-  <body>
-    <header class="sidebar">
-      <a class="brand" href="#home" aria-label="Saans home"
-        ><img src="/favicon.svg" alt="" /><span>saans<span class="brand-dot">.</span></span></a
-      >
-      <nav aria-label="Main navigation" id="nav"></nav>
-      <a class="button header-cta" href="#overview">Get started ↗</a>
-    </header>
-    <div class="shell">
-      <header class="topbar">
-        <div class="breadcrumb">
-          Your everyday air companion <span>/</span> <strong id="section-name">Overview</strong>
-        </div>
-        <div class="top-actions">
-          <span class="local-pill"><i></i> Air companion</span
-          ><button id="profile-open" class="avatar" aria-label="Edit household profile">MY</button>
-        </div>
-      </header>
-      <main id="main">
-        <div class="heading">
-          <div>
-            <p class="eyebrow">A LITTLE MORE ROOM TO BREATHE</p>
-            <h1 id="page-title">Good choices start with better air.</h1>
-            <p class="subtitle" id="page-subtitle">
-              Understand your air. Plan your day. Look after your people.
-            </p>
-          </div>
-          <button class="button secondary" id="profile-button">⚙ Your household</button>
-        </div>
-        <div class="location-toolbar">
-          <form id="search-form">
-            <span aria-hidden="true">⌖</span
-            ><input
-              id="city-search"
-              aria-label="Search city"
-              placeholder="Search a city…"
-              autocomplete="off"
-              required
-              minlength="2"
-            /><button class="button compact" type="submit">Find city</button>
-          </form>
-          <button class="text-button" id="locate">Use my location ↗</button
-          ><label class="follow-location"
-            ><input type="checkbox" id="follow-location" /> Follow my location</label
-          >
-          <div class="data-controls">
-            <label><input type="checkbox" id="demo" /> Demo data</label
-            ><button class="icon-button" id="refresh" aria-label="Refresh data">↻</button>
-          </div>
-        </div>
-        <div id="search-results" class="search-results" aria-live="polite"></div>
-        <div id="notice" role="status" aria-live="polite"></div>
-        <div id="selected-location" class="selected-location" aria-live="polite"></div>
-        <div id="view"></div>
-        <footer>
-          <span>Made for healthier routines and lighter footprints.</span
-          ><button class="text-button" id="sources-open">Data & methodology ↗</button>
-        </footer>
-      </main>
-    </div>
-    <dialog id="profile-dialog">
-      <form id="profile-form">
-        <div class="dialog-head">
-          <div>
-            <p class="eyebrow">MAKE IT PERSONAL</p>
-            <h2>Your household, your plan.</h2>
-          </div>
-          <button type="button" class="icon-button close-dialog" aria-label="Close">×</button>
-        </div>
-        <p class="muted">
-          Saved only in this browser. Your profile is sent to your configured AI provider only when
-          you ask the assistant.
-        </p>
-        <fieldset>
-          <legend>Who should we keep in mind?</legend>
-          <label class="check-row"><input name="children" type="checkbox" /> Children at home</label
-          ><label class="check-row"
-            ><input name="older" type="checkbox" /> Older adults at home</label
-          ><label class="check-row"
-            ><input name="sensitive" type="checkbox" /> Someone sensitive to air pollution</label
-          ><label class="check-row"
-            ><input name="purifier" type="checkbox" /> We have a particle air purifier</label
-          >
-        </fieldset>
-        <div class="form-grid">
-          <label
-            >Usual commute<select name="commute">
-              <option value="car">Solo car</option>
-              <option value="metro">Metro / rail</option>
-              <option value="bus">Bus</option>
-              <option value="bike">Bicycle</option>
-              <option value="walk">Walking</option>
-            </select></label
-          ><label
-            >One-way distance (km)<input
-              name="distance"
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
-              required /></label
-          ><label
-            >Leave home (hour)<input name="start" type="number" min="0" max="23" required /></label
-          ><label
-            >Return home (hour)<input name="end" type="number" min="0" max="23" required /></label
-          ><label
-            >Home improvement budget<select name="budget">
-              <option value="low">Start with free changes</option>
-              <option value="medium">Some room to spend</option>
-              <option value="high">Open to equipment</option>
-            </select></label
-          >
-        </div>
-        <button class="button full" type="submit">Save & personalise my plan ↗</button>
-      </form>
-    </dialog>
-    <dialog id="sources-dialog">
-      <div class="dialog-head">
-        <h2>Know what’s behind the numbers.</h2>
-        <button class="icon-button close-dialog" aria-label="Close">×</button>
-      </div>
-      <div id="methodology"></div>
-    </dialog>
-    <div id="toast" role="status" aria-live="polite"></div>
-    <script src="/vendor/leaflet/leaflet.js"></script>
-    <script type="module" src="/app.js"></script>
-  </body>
-</html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050506"><title>Saans — A little more room to breathe</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/vendor/leaflet/leaflet.css"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/dashboard.css"></head>
+<body>
+<header class="sidebar"><a class="brand" href="#home" aria-label="Saans home"><img src="/favicon.svg" alt=""><span>saans<span class="brand-dot">.</span></span></a><nav aria-label="Main navigation" id="nav"></nav><a class="button header-cta" href="#overview">Get started ↗</a></header>
+<div class="shell"><header class="topbar"><div class="breadcrumb">Your everyday air companion <span>/</span> <strong id="section-name">Overview</strong></div><div class="top-actions"><span class="local-pill"><i></i> Air companion</span><button id="profile-open" class="avatar" aria-label="Edit household profile">MY</button></div></header>
+<main id="main"><div class="heading"><div><p class="eyebrow">A LITTLE MORE ROOM TO BREATHE</p><h1 id="page-title">Good choices start with better air.</h1><p class="subtitle" id="page-subtitle">Understand your air. Plan your day. Look after your people.</p></div><button class="button secondary" id="profile-button">⚙ Your household</button></div>
+<div class="location-toolbar"><form id="search-form"><span aria-hidden="true">⌖</span><input id="city-search" aria-label="Search city" placeholder="Search a city…" autocomplete="off" required minlength="2"><button class="button compact" type="submit">Find city</button></form><button class="text-button" id="locate">Use my location ↗</button><label class="follow-location"><input type="checkbox" id="follow-location"> Follow my location</label><div class="data-controls"><label><input type="checkbox" id="demo"> Demo data</label><button class="icon-button" id="refresh" aria-label="Refresh data">↻</button></div></div><div id="search-results" class="search-results" aria-live="polite"></div><div id="notice" role="status" aria-live="polite"></div>
+<div id="selected-location" class="selected-location" aria-live="polite"></div><div id="view"></div>
+<footer><span>Made for healthier routines and lighter footprints.</span><button class="text-button" id="sources-open">Data & methodology ↗</button></footer>
+</main></div>
+<dialog id="profile-dialog"><form id="profile-form"><div class="dialog-head"><div><p class="eyebrow">MAKE IT PERSONAL</p><h2>Your household, your plan.</h2></div><button type="button" class="icon-button close-dialog" aria-label="Close">×</button></div><p class="muted">Saved only in this browser. Your profile is sent to your configured AI provider only when you ask the assistant.</p><fieldset><legend>Who should we keep in mind?</legend><label class="check-row"><input name="children" type="checkbox"> Children at home</label><label class="check-row"><input name="older" type="checkbox"> Older adults at home</label><label class="check-row"><input name="sensitive" type="checkbox"> Someone sensitive to air pollution</label><label class="check-row"><input name="purifier" type="checkbox"> We have a particle air purifier</label></fieldset><div class="form-grid"><label>Usual commute<select name="commute"><option value="car">Solo car</option><option value="metro">Metro / rail</option><option value="bus">Bus</option><option value="bike">Bicycle</option><option value="walk">Walking</option></select></label><label>One-way distance (km)<input name="distance" type="number" min="0" max="100" step="0.5" required></label><label>Leave home (hour)<input name="start" type="number" min="0" max="23" required></label><label>Return home (hour)<input name="end" type="number" min="0" max="23" required></label><label>Home improvement budget<select name="budget"><option value="low">Start with free changes</option><option value="medium">Some room to spend</option><option value="high">Open to equipment</option></select></label></div><button class="button full" type="submit">Save & personalise my plan ↗</button></form></dialog>
+<dialog id="sources-dialog"><div class="dialog-head"><h2>Know what’s behind the numbers.</h2><button class="icon-button close-dialog" aria-label="Close">×</button></div><div id="methodology"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div><script src="/vendor/leaflet/leaflet.js"></script><script type="module" src="/app.js"></script>
+</body></html>

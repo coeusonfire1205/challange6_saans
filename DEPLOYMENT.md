@@ -16,7 +16,7 @@ This app needs a Node.js backend. GitHub Pages and a static-only upload cannot r
 Create a **Web Service**, connect the repository and use:
 
 - Runtime: Node
-- Build command: `npm ci --include=dev && npm run check`
+- Build command: `npm run check`
 - Start command: `npm start`
 - Environment: `NODE_ENV=production`, `HOST=0.0.0.0`
 - Health check: `/healthz`
