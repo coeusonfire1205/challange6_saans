@@ -1,0 +1,16 @@
+{
+  "name": "saans-air-quality-assistant",
+  "version": "1.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Challenge 06: Urban Air Quality Assistant",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "dev": "node --watch --env-file-if-exists=.env server.mjs",
+    "test": "node --test",
+    "check": "node --check server.mjs && node --check public/app.js && node --check public/map.js && node --check public/home.js && node --check public/dashboard.js && node --test"
+  }
+}
